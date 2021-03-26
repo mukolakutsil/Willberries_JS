@@ -35,6 +35,9 @@ const getGoods = async () => {
 
 const cart = {
 	cartGoods: [],
+	getCartCountGoods() {
+		return this.cartGoods.length;
+	},
 	renderCart() {
 		cartTableGoods.textContent = '';
 		this.cartGoods.forEach(({ id, name, price, count }) => {
@@ -113,18 +116,15 @@ const cart = {
 		}
 	},
 	calcCartCount() {
-		const totalGoods = this.cartGoods.reduce((sum, item, arr) => {
-			if (arr.length <= 0) {
-				return 0;
-			} else {
-				return sum + item.count;
-			}
+		const totalGoods = this.cartGoods.reduce((sum, item) => {
+
+			return sum + item.count;
 		}, 0);
 
-		cartCount.textContent = totalGoods;
+		cartCount.textContent = totalGoods ? totalGoods : '';
 	},
 	clearCart() {
-		this.cartGoods = [];
+		this.cartGoods.length = 0;
 		this.calcCartCount();
 		this.renderCart();
 	}
@@ -326,5 +326,68 @@ btnClothing.addEventListener('click', () => {
 	btnClick(btnClothing, 'category', 'Clothing');
 });
 
+// form
+
+const modalForm = document.querySelector('.modal-form');
+
+const postData = dataUser => fetch('server.php', {
+	method: 'POST',
+	body: dataUser,
+});
+
+const validForm = (formData) => {
+	let valid = false;
+
+	for (const [, value] of formData) {
+		if (value.trim()) {
+			valid = true;
+		} else {
+			valid = false;
+			break;
+		}
+	}
+
+	return valid;
+}
+
+modalForm.addEventListener('submit', event => {
+	event.preventDefault();
+
+	const formData = new FormData(modalForm);
+
+	if (validForm(formData) && cart.getCartCountGoods()) {
+
+		formData.append('cart', JSON.stringify(cart.cartGoods));
+
+		postData(formData)
+			.then(resposne => {
+				if (!resposne.ok) {
+					throw new Error(resposne.status);
+				}
+
+				alert('Your order has been shipped. You will be called soon');
+			})
+			.catch(error => {
+				alert('Error :(');
+				console.error(error);
+			})
+			.finally(() => {
+				closeModal();
+				modalForm.reset();
+				cart.clearCart();
+			})
+	} else {
+		if (!validForm(formData)) {
+			alert('Fill in the fields correctly');
+		}
+
+		if (!cart.getCartCountGoods()) {
+			alert('Add items to cart');
+		}
+	}
+
+
+
+})
 
 
